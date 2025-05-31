@@ -47,6 +47,10 @@ public class AlumnoRestController {
     @Autowired
     AlumnoRepository alumnoRepository;
     
+    @Autowired
+    private WebClient.Builder webClientBuilder;
+
+    
      HttpClient client = HttpClient.create()
             .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
             .option(ChannelOption.SO_KEEPALIVE, true)
