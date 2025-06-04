@@ -4,9 +4,9 @@
  */
 package controller;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import entity.Alumno;
 import entity.AlumnoMaterias;
-import com.fasterxml.jackson.databind.JsonNode;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.epoll.EpollChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;
@@ -22,6 +22,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import java.util.Collections;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -43,32 +44,41 @@ import repository.AlumnoRepository;
 @RestController
 @RequestMapping("/alumnos")
 public class AlumnoRestController {
-    
+    // ------------ Metodos CRUD --------------
     @Autowired
     AlumnoRepository alumnoRepository;
     
-    @Autowired
-    private WebClient.Builder webClientBuilder;
-
-    
-     HttpClient client = HttpClient.create()
+     private final WebClient.Builder webClientBuilder;
+     
+      public AlumnoRestController(WebClient.Builder webClientBuilder) {
+        this.webClientBuilder = webClientBuilder;
+    }
+      
+      
+      //webClient requires HttpClient library to work propertly       
+    HttpClient client = HttpClient.create()
+            //Connection Timeout: is a period within which a connection between a client and a server must be established
             .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
             .option(ChannelOption.SO_KEEPALIVE, true)
             .option(EpollChannelOption.TCP_KEEPIDLE, 300)
-            .option(EpollChannelOption.TCP_KEEPINTVL, 60)           
+            .option(EpollChannelOption.TCP_KEEPINTVL, 60)
+            //Response Timeout: The maximun time we wait to receive a response after sending a request
             .responseTimeout(Duration.ofSeconds(1))
+            // Read and Write Timeout: A read timeout occurs when no data was read within a certain 
+            //period of time, while the write timeout when a write operation cannot finish at a specific time
             .doOnConnected(connection -> {
                 connection.addHandlerLast(new ReadTimeoutHandler(5000, TimeUnit.MILLISECONDS));
                 connection.addHandlerLast(new WriteTimeoutHandler(5000, TimeUnit.MILLISECONDS));
             });
-            
+      
+    
     @GetMapping()
     public List<Alumno> list() {
         return alumnoRepository.findAll();
     }
     
     @GetMapping("/{id}")
-     public Alumno get(@PathVariable(name = "id") long id) {
+    public Alumno get(@PathVariable(name = "id") long id) {
         return alumnoRepository.findById(id).get();
     }
     
@@ -85,35 +95,43 @@ public class AlumnoRestController {
     }
     
     @PostMapping
-     public ResponseEntity<?> post(@RequestBody Alumno input) {
-        input.getAlumno().forEach(x -> x.setAlumno(input));
+    public ResponseEntity<?> post(@RequestBody Alumno input) {
+        input.getMaterias().forEach(x -> x.setAlumno(input));
         Alumno save = alumnoRepository.save(input);
         return ResponseEntity.ok(save);
     }
     
     @DeleteMapping("/{id}")
-     public ResponseEntity<?> delete(@PathVariable(name = "id") long id) {
+    public ResponseEntity<?> delete(@PathVariable(name = "id") long id) {
           Optional<Alumno> findById = alumnoRepository.findById(id);   
         if(findById.get() != null){               
                   alumnoRepository.delete(findById.get());  
         }
         return ResponseEntity.ok().build();
     }
-     
-    @GetMapping("/alumnos_completo")
-    public Alumno getByCode(@RequestParam(name = "nc") String nc) {
-        
-        Alumno alumno = alumnoRepository.findByNumControl(nc);
-        
-        List<AlumnoMaterias> products = alumno.getAlumno();
-        products.forEach(x ->{
-            String nombreMateria = getMateriaName(x.getId());
-            x.setNombreMateria(nombreMateria);
-        });
-        return alumno;
-       
+    
+    
+   @GetMapping("/alumnos_completo")
+public ResponseEntity<Alumno> getByCode(@RequestParam(name = "nc") String nc) {
+    Alumno alumno = alumnoRepository.findByNumControl(nc);
+    
+    if (alumno == null) {
+        // Retornar 404 Not Found si no se encuentra el alumno
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
     }
     
+    List<AlumnoMaterias> materias = alumno.getMaterias();
+    materias.forEach(x -> {
+        String nombreMateria = getMateriaName(x.getId());
+        x.setNombreMateria(nombreMateria);
+    });
+    
+    return ResponseEntity.ok(alumno);
+}
+
+    
+    
+       
     private String getMateriaName(long id) { 
         WebClient build = webClientBuilder.clientConnector(new ReactorClientHttpConnector(client))
                 .baseUrl("http://localhost:8081/materias")
@@ -125,5 +143,5 @@ public class AlumnoRestController {
         String name = block.get("nombreMateria").asText();
         return name;
     }
-      
+    
 }

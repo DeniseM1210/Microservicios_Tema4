@@ -39,11 +39,10 @@ public class MateriaRestController {
     @GetMapping("/{id}")
     public ResponseEntity<?> get(@PathVariable long id) {
         Optional<Materia> materia = materiaRepository.findById(id);
-        if(materia.isPresent()){
-            return new ResponseEntity<>(materia.get(), HttpStatus.OK);
-        }else{
+        if(materia.isPresent())
+            return  new ResponseEntity<>(materia.get(), HttpStatus.OK);
+        else
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
     }
     
     @PutMapping("/{id}")
@@ -52,18 +51,17 @@ public class MateriaRestController {
         if(materia.isPresent()){
             Materia nuevaMateria = materia.get();
             nuevaMateria.setNombreMateria(input.getNombreMateria());
-            Materia materiaGuardada = materiaRepository.save(nuevaMateria);
-            return new ResponseEntity<>(materia.get(), HttpStatus.OK);
-        }else{
+            nuevaMateria.setCreditos(input.getCreditos());
+            Materia m = materiaRepository.save(nuevaMateria);
+            return  new ResponseEntity<>(materia.get(), HttpStatus.OK); 
+        }else
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
     }
     
     @PostMapping
     public ResponseEntity<?> post(@RequestBody Materia input) {
-        Materia materiaGuardada = materiaRepository.save(input);
-        return ResponseEntity.ok(materiaGuardada);
-        
+        Materia materia = materiaRepository.save(input);
+        return ResponseEntity.ok(materia);
     }
     
     @DeleteMapping("/{id}")

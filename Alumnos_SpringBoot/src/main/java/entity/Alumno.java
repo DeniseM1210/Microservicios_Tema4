@@ -18,9 +18,8 @@ import lombok.Data;
  *
  * @author denis
  */
-@Data //codigo automatizado de lombok para getterss y setters
+@Data //codigo automatizado de LOMBOK para Getters y Setters
 @Entity
-
 public class Alumno {
     
     @GeneratedValue(strategy= GenerationType.AUTO)
@@ -30,13 +29,12 @@ public class Alumno {
     private String nombre;
     private byte edad;
     
-    @OneToMany(fetch=FetchType.LAZY, mappedBy = "alumno", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<AlumnoMaterias> alumno;
+    @OneToMany(fetch=FetchType.LAZY, mappedBy = "alumno", cascade=CascadeType.ALL, 
+            orphanRemoval = true)
+    private List<AlumnoMaterias> materias;
     
+    //private List<ActividadesExtra> actividades;
     @Transient
     private List<?> actividades;
-    
-    
-    
-    
 }
+

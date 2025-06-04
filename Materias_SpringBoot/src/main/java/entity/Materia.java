@@ -12,17 +12,15 @@ import lombok.Data;
  *
  * @author denis
  */
-@Data //codigo automatizado de lombok para getterss y setters
+@Data //codigo automatizado de LOMBOK para Getters y Setters
 @Entity
-
 public class Materia {
     
     @GeneratedValue(strategy= GenerationType.AUTO)
     @Id
     private long id;
+    private String cveMateria;
     private String nombreMateria;
-    
-    
-    
+    private byte creditos;
     
 }
